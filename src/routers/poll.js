@@ -3,6 +3,9 @@ import pollController from '../controllers/poll.js';
 
 const router = new express.Router();
 
+// 모든 데이터 가져오기
+router.get('/', pollController.getPoll);
+
 // 선택지 가져오기
 router.get('/choice', pollController.getChoices);
 

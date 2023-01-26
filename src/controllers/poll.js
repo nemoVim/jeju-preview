@@ -1,9 +1,8 @@
 import Poll from '../models/poll.js';
 
 async function readPoll() {
-    const poll = await Poll.find({});
-    console.log(poll);
-    return poll;
+    const polls = await Poll.find({});
+    return polls[0];
 }
 
 async function readChoices() {
@@ -30,6 +29,10 @@ async function updateState(state) {
 }
 
 export default {
+    getPoll: async (req, res) => {
+        const poll = await readPoll();
+        res.send(poll);
+    },
     getChoices: async (req, res) => {
         const choiceList = await readChoices();
         res.send(choiceList);
