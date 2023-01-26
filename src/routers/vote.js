@@ -7,7 +7,7 @@ const router = express.Router();
 router.post('/', voteController.postVote);
 
 // 투표 자체의 결과 가져오기
-router.post('/', voteController.getResult);
+router.post('/result', voteController.getResult);
 
 // 실제 결과 입력 후 투표자들의 순위 가져오기
 router.post('/ranking', voteController.getRanking);

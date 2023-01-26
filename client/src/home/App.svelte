@@ -1,5 +1,5 @@
 <script>
-    import { listen } from 'svelte/internal';
+    import post from '../lib/post';
 
 
     async function getPoll() {
@@ -44,24 +44,8 @@
     }
 
     async function sendVoteData(voteData) {
-            const resData = await fetch('http://localhost:2023/vote', {
-                method: 'POST',
-                headers: {
-                    'Content-type': 'application/json',
-                },
-                body: JSON.stringify(voteData),
-            });
-
-            const res = await resData.json();
-
-            console.log('Res data');
-            console.log(res);
-
-            if (res.status === 'error') {
-                throw new Error(res.msg);
-            } else {
-                return true;
-            }
+        await post('http://localhost:2023/vote', voteData);
+        return true;
     }
 
     async function submitVote() {
@@ -69,7 +53,7 @@
             document.getElementById('submit-btn').classList.add('hidden');
             await sendVoteData(makeVoteData(makeChoiceList()));
             document.getElementById('error-msg').classList.remove('hidden');
-            document.getElementById('error-msg').innerHTML = '투표가 정상적으로 완료되었습니다.';
+            document.getElementById('error-msg').innerHTML = '투표가 정상적으로 처리되었습니다.';
             console.log("Successfully voted!");
         } catch (e) {
             document.getElementById('submit-btn').classList.remove('hidden');
@@ -82,13 +66,13 @@
 </script>
 
 <main>
-    <h1>Title</h1>
+    <h1>투표인가? 투자인가?</h1>
 
     {#await getPollPromise}
         <p>Loading...</p>
     {:then poll} 
         {#if poll.state === 'open'}
-            <p>Name</p>
+            <p>이름</p>
             <input id="name-input" type="text" placeholder="장현규">
 
             <p>전화번호 뒷 4자리</p>
@@ -106,7 +90,7 @@
             <p id="error-msg" class="hidden">대충 오류가 발생했다는 글</p>
 
         {:else}
-            <p>Poll is closed.</p>
+            <p>투표가 종료되었습니다.</p>
         {/if}
     {/await}
 </main>
