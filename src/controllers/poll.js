@@ -31,23 +31,40 @@ async function updateState(state) {
 export default {
     getPoll: async (req, res) => {
         const poll = await readPoll();
-        res.send(poll);
+        res.send({
+            status: 'success',
+            msg: poll
+        });
     },
     getChoices: async (req, res) => {
         const choiceList = await readChoices();
-        res.send(choiceList);
+        res.send({
+            status: 'success',
+            msg: choiceList, 
+        });
     },
     putChoices: async (req, res) => {
-        const choiceList = req.body.choiceList;
+        const choiceList = req.body;
         await updateChoices(choiceList);
+        res.send({
+            status: 'success',
+            msg: '',
+        });
     },
     putResult: async (req, res) => {
-        const resultList = req.body.resultList;
+        const resultList = req.body;
         await updateResult(resultList);
+        res.send({
+            status: 'success',
+            msg: '',
+        });
     },
     putState: async (req, res) => {
         const state = req.body.state;
         await updateState(state);
-        res.end();
+        res.send({
+            status: 'success',
+            msg: '',
+        });
     },
 }
