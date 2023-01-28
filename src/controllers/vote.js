@@ -72,7 +72,7 @@ async function countVotes(result) {
 function calculateMoney(result) {
     result.voteList.forEach((voteList, i) => {
         const money = voteList.reduce((prev, val, i) => {
-            return prev + val * (voteList.length - i);
+            return prev + val * (voteList.length - i) * 20;
         }, 0);
         result.moneyList[i] = money;
     });

@@ -141,7 +141,7 @@
             <tr>
                 <td>Title</td>
                 {#each result.choiceList as choice, i}
-                    <td>{i + 1}등</td>
+                    <td>{(result.choiceList.length - i) * 20 }만원</td>
                 {/each}
                 <td>Money</td>
             </tr>
@@ -149,17 +149,17 @@
                 <tr>
                     <td>{result.choiceList[i]}</td>
                     {#each voteList as vote}
-                        <td>{vote}</td>
+                        <td>{vote}표</td>
                     {/each}
-                    <td>{result.moneyList[i]}</td>
+                    <td>{result.moneyList[i]}만원</td>
                 </tr>
             {/each}
             <tr>
                 <td>Total</td>
                 {#each result.totalVoteList as totalVotes}
-                    <td>{totalVotes}</td>
+                    <td>{totalVotes}표</td>
                 {/each}
-                <td>{result.totalMoney}</td>
+                <td>{result.totalMoney}만원</td>
             </tr>
         </table>
 
@@ -193,7 +193,7 @@
                     <tr>
                         <td>{i + 1}</td>
                         <td>{info.name}</td>
-                        <td>{info.score}</td>
+                        <td>{info.score}점</td>
                         <td>{info.choiceList}</td>
                         <td>
                             {new Date(info.time).toLocaleDateString() +

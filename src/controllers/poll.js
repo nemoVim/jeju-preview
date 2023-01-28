@@ -1,11 +1,23 @@
 import Poll from '../models/poll.js';
+import Info from '../models/info.js';
 
 async function resetPoll() {
     const poll = await readPoll();
     poll.choiceList = [];
     poll.resultList = [];
     poll.state = 'close';
-    return await poll.save();
+    await poll.save();
+
+    const infos = await Info.find({
+        voted: true 
+    });
+
+    for (let info of infos) {
+        info.voted = false;
+        await info.save();
+    }
+
+    return true;
 }
 async function readPoll() {
     const polls = await Poll.find({});
