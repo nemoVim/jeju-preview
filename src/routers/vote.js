@@ -12,4 +12,6 @@ router.post('/result', voteController.getResult);
 // 실제 결과 입력 후 투표자들의 순위 가져오기
 router.post('/ranking', voteController.getRanking);
 
+router.post('/reset', voteController.postReset);
+
 export default router;

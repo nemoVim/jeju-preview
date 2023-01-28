@@ -4,6 +4,10 @@ import Info from '../models/info.js';
 
 // Interact with DB
 
+async function resetVote() {
+    return await Vote.deleteMany({});
+}
+
 async function writeVote(voteData) {
     console.log(voteData);
     const vote = new Vote(voteData);
@@ -39,25 +43,24 @@ async function updateInfoToVoted(name, phone) {
     return await info.save();
 }
 
-
 // Calculate
 
 async function makeResultObj() {
     const poll = await readPoll();
-    const lenObj = {length: poll.choiceList.length};
+    const lenObj = { length: poll.choiceList.length };
     const result = {
         choiceList: poll.choiceList,
         voteList: Array.from(lenObj, () => Array.from(lenObj, () => 0)),
-        scoreList: Array.from(lenObj, () => 0),
+        moneyList: Array.from(lenObj, () => 0),
         totalVoteList: Array.from(lenObj, () => 0),
-        totalScore: 0,
+        totalMoney: 0,
     };
     return result;
 }
 
 async function countVotes(result) {
     const allVotes = await readAllVotes();
-    allVotes.forEach(vote => {
+    allVotes.forEach((vote) => {
         const choiceList = vote.choiceList;
         choiceList.forEach((choice, ranking) => {
             result.voteList[choice][ranking] += 1;
@@ -66,12 +69,12 @@ async function countVotes(result) {
     return result;
 }
 
-function calculateScore(result) {
+function calculateMoney(result) {
     result.voteList.forEach((voteList, i) => {
-        const score = voteList.reduce((prev, val, i) => {
-            return prev + val*(voteList.length - i);
+        const money = voteList.reduce((prev, val, i) => {
+            return prev + val * (voteList.length - i);
         }, 0);
-        result.scoreList[i] = score;
+        result.moneyList[i] = money;
     });
     return result;
 }
@@ -83,7 +86,7 @@ function countTotal(result) {
         });
     });
 
-    result.totalScore = result.scoreList.reduce((prev, val) => {
+    result.totalMoney = result.moneyList.reduce((prev, val) => {
         return prev + val;
     }, 0);
 
@@ -91,12 +94,68 @@ function countTotal(result) {
 }
 
 async function calculateResult() {
-    const result = countTotal(calculateScore(await countVotes(await makeResultObj())));
+    const result = countTotal(
+        calculateMoney(await countVotes(await makeResultObj()))
+    );
     console.log(result);
     return result;
 }
 
-async function calculateRanking(allVotes, pollResult) {}
+async function makeRankingList() {
+    const allVotes = await readAllVotes();
+    const rankingList = [];
+    allVotes.forEach((info, i) => {
+        rankingList.push({
+            name: info.name,
+            choiceList: info.choiceList,
+            time: info.createdAt,
+            score: 0,
+        });
+    });
+    return rankingList;
+}
+
+function calculateScore(info, pollResult) {
+    const score = info.choiceList.reduce((prev, val, idx) => {
+        if (pollResult[idx] === val) {
+            return prev + (info.choiceList.length - idx);
+        } else {
+            return prev;
+        }
+    }, 0);
+
+    info['score'] = score;
+
+    return info;
+}
+
+async function addScore(rankingList) {
+    const pollResult = await readPollResult();
+    const ranking = {
+        rankingList: rankingList.map((info) => {
+            return calculateScore(info, pollResult);
+        }),
+        resultList: pollResult,
+    };
+
+    return ranking;
+}
+
+function sortRanking(ranking) {
+    ranking.rankingList.sort((a, b) => {
+        if (b.score === a.score) {
+            return -(b.time - a.time);
+        } else {
+            return b.score - a.score;
+        }
+    });
+    return ranking;
+}
+
+async function calculateRanking() {
+    const ranking = sortRanking(await addScore(await makeRankingList()));
+    return ranking;
+}
 
 // Check
 
@@ -117,8 +176,8 @@ async function checkInfo(name, phone) {
     if (info === undefined) {
         throw new Error('이름 또는 전화번호가 일치하지 않습니다.');
     } else if (info.voted) {
-        return info;
-        // throw new Error('이미 투표하셨습니다.');
+        // return info;
+        throw new Error('이미 투표하셨습니다.');
     } else {
         return info;
     }
@@ -143,17 +202,17 @@ export default {
             const info = await checkInfo(voteData.name, voteData.phone);
             console.log(info._id);
             await writeVote({
-                infoId: info._id,
+                name: info.name,
                 choiceList: voteData.choiceList,
             });
             await updateInfoToVoted(voteData.name, voteData.phone);
             res.send({
-                status: 'success'
+                status: 'success',
             });
         } catch (e) {
             res.send({
                 status: 'error',
-                msg: e.message
+                msg: e.message,
             });
         }
     },
@@ -165,12 +224,12 @@ export default {
             const result = await calculateResult();
             res.send({
                 status: 'success',
-                msg: result
+                msg: result,
             });
-        } catch(e) {
+        } catch (e) {
             res.send({
                 status: 'error',
-                msg: e.message
+                msg: e.message,
             });
         }
     },
@@ -178,19 +237,36 @@ export default {
         const pw = req.body.password;
 
         try {
-            checkAdmin(pw)
-            const allVotes = await readAllVotes();
-            const pollResult = await readPollResult();
-            const ranking = await calculateRanking(allVotes, pollResult);
+            checkAdmin(pw);
+            const ranking = await calculateRanking();
             res.send({
                 status: 'success',
-                msg: ranking 
+                msg: ranking,
             });
-        } catch(e) {
+        } catch (e) {
             res.send({
                 status: 'error',
-                msg: e.message
+                msg: e.message,
             });
         }
     },
+    postReset: async (req, res) => {
+        const pw = req.body.password;
+
+        try {
+            checkAdmin(pw);
+            await resetVote();
+            res.send({
+                status: 'success',
+                msg: '정상적으로 처리되었습니다.',
+            });
+
+        } catch (e) {
+            res.send({
+                status: 'error',
+                msg: e.message,
+            });
+
+        }
+    }
 };

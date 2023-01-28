@@ -7,3 +7,14 @@
 .hidden {
   display: none !important;
 }
+
+table {
+  border-collapse: collapse;
+  border: solid .1rem black;
+  text-align: center;
+}
+
+td {
+  padding: .5rem;
+  border: solid .1rem black;
+}

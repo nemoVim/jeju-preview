@@ -1,9 +1,11 @@
 <script>
-    import { postReq, putReq } from '../lib/requests.js';
+    import { getReq, postReq, putReq } from '../lib/requests.js';
     import { hideElementById, showElementById } from '../lib/toggleElements.js';
 
     let logined = false;
     let result = {};
+    let ranking = [];
+    let state = '';
 
     function makePwData() {
         const pwData = {
@@ -13,14 +15,15 @@
     }
 
     async function getResult(pwData) {
-        const result = await postReq('/vote/result', pwData);
-        console.log(result);
-        return result;
+        result = await postReq('/vote/result', pwData);
     }
 
     async function getRanking(pwData) {
-        const ranking = await postReq('/vote/ranking', pwData);
-        return ranking;
+        ranking = await postReq('/vote/ranking', pwData);
+    }
+
+    async function getState() {
+        state = await getReq('/poll/state');
     }
 
     async function submitPw() {
@@ -31,9 +34,11 @@
             //     getResult(pwData),
             //     getRanking(pwData),
             // ]);
-            const _result = await getResult(pwData);
+            await getResult(pwData);
+            await getRanking(pwData);
+            await getState();
 
-            result = _result;
+            document.cookie = 'pw=' + pwData.password;
 
             logined = true;
         } catch (e) {
@@ -43,32 +48,123 @@
         }
     }
 
-    function openPoll() {
-        putReq('/poll/state', {
+    async function openPoll() {
+        const pw = document.cookie.split('=')[1];
+        await putReq('/poll/state', {
             state: 'open',
+            password: pw,
         });
+        await getState();
     }
 
-    function closePoll() {
-        putReq('/poll/state', {
+    async function closePoll() {
+        const pw = document.cookie.split('=')[1];
+        await putReq('/poll/state', {
             state: 'close',
+            password: pw,
         });
+        await getState();
     }
 
-    function submitResult() {
+    async function submitResult() {
+        const pw = document.cookie.split('=')[1];
         const resultList = document
             .getElementById('result-input')
             .value.split(/ *, */);
-        putReq('/poll/result', resultList);
+        await putReq('/poll/result', {
+            resultList: resultList,
+            password: pw,
+        });
+        await getRanking({
+            password: pw,
+        });
+    }
+
+    async function submitChoice() {
+        const pw = document.cookie.split('=')[1];
+        const choiceList = document
+            .getElementById('choice-input')
+            .value.split(/ *, */);
+        await putReq('/poll/choice', {
+            choiceList: choiceList,
+            password: pw,
+        });
+        await getResult({
+            password: pw,
+        });
+    }
+
+    async function reset() {
+        const pw = document.cookie.split('=')[1];
+
+        try {
+            await postReq('/poll/reset', {
+                password: pw,
+            });
+            await postReq('/vote/reset', {
+                password: pw,
+            });
+        } catch (e) {
+            console.log(e);
+        }
     }
 </script>
 
 <main>
     <h1>Admin Panel</h1>
+
     <hr />
+
     {#if logined === true}
+
+    <button id="reset-btn" on:click={reset}>초기화</button>
+
+    <hr />
+
         <button id="open-btn" on:click={openPoll}>투표 열기</button>
         <button id="close-btn" on:click={closePoll}>투표 닫기</button>
+        <p>현재 상태: {state}</p>
+
+        <hr />
+
+        <input
+            id="choice-input"
+            type="text"
+            placeholder="0번 팀, 1번 팀, ..."
+        />
+        <button id="submit-choice-btn" on:click={submitChoice}
+            >팀명 입력하기</button
+        >
+
+        <hr />
+        <table>
+            <tr>
+                <td>Title</td>
+                {#each result.choiceList as choice, i}
+                    <td>{i + 1}등</td>
+                {/each}
+                <td>Money</td>
+            </tr>
+            {#each result.voteList as voteList, i}
+                <tr>
+                    <td>{result.choiceList[i]}</td>
+                    {#each voteList as vote}
+                        <td>{vote}</td>
+                    {/each}
+                    <td>{result.moneyList[i]}</td>
+                </tr>
+            {/each}
+            <tr>
+                <td>Total</td>
+                {#each result.totalVoteList as totalVotes}
+                    <td>{totalVotes}</td>
+                {/each}
+                <td>{result.totalMoney}</td>
+            </tr>
+        </table>
+
+        <hr />
+
         <input
             id="result-input"
             type="text"
@@ -77,30 +173,36 @@
         <button id="submit-result-btn" on:click={submitResult}
             >결과 입력하기</button
         >
+
+        {#if ranking.resultList !== undefined}
+            <p>현재 결과: {ranking.resultList}</p>
+        {/if}
+
+        <hr />
+
         <table>
             <tr>
-                <td>Title</td>
-                {#each result.choiceList as choice, i}
-                    <td>{i + 1}등</td>
-                {/each}
-                <td>Score</td>
+                <td>index</td>
+                <td>name</td>
+                <td>score</td>
+                <td>choice</td>
+                <td>time</td>
             </tr>
-            {#each result.voteList as voteList, i}
-                <tr>
-                    <td>{result.choiceList[i]}</td>
-                    {#each voteList as vote}
-                        <td>{vote}</td>
-                    {/each}
-                    <td>{result.scoreList[i]}</td>
-                </tr>
-            {/each}
-            <tr>
-                <td>Total</td>
-                {#each result.totalVoteList as totalVotes}
-                    <td>{totalVotes}</td>
+            {#if ranking.rankingList.length !== 0}
+                {#each ranking.rankingList as info, i}
+                    <tr>
+                        <td>{i + 1}</td>
+                        <td>{info.name}</td>
+                        <td>{info.score}</td>
+                        <td>{info.choiceList}</td>
+                        <td>
+                            {new Date(info.time).toLocaleDateString() +
+                                ' ' +
+                                new Date(info.time).toTimeString()}
+                        </td>
+                    </tr>
                 {/each}
-                <td>{result.totalScore}</td>
-            </tr>
+            {/if}
         </table>
     {:else}
         <div id="login-div">

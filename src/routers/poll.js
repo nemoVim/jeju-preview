@@ -18,4 +18,10 @@ router.put('/result', pollController.putResult);
 // 투표 열고 닫기
 router.put('/state', pollController.putState);
 
+// 투표 상태 가져오기
+router.get('/state', pollController.getState);
+
+
+router.post('/reset', pollController.postReset);
+
 export default router;

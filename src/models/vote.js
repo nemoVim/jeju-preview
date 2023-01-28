@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const voteSchema = new mongoose.Schema(
     {
-        infoId: { type: mongoose.Schema.Types.ObjectId, required: true },
+        name: { type: String, required: true },
         choiceList: { type: [Number], required: true },
     },
     {
