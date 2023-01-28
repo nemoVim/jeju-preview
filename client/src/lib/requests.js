@@ -1,4 +1,5 @@
-const host = 'http://localhost:2023';
+// const host = 'http://localhost:2023';
+const host = '';
 
 async function resCheck(res) {
     const resData = await res.json();

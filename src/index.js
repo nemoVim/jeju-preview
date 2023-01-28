@@ -8,7 +8,13 @@ import express from 'express';
 const app = express();
 
 app.use(express.json());
-app.use(express.static('./client/public'));
+app.use(express.static('./client/dist/'));
+
+import path from 'path';
+
+app.get('/admin', (req, res) => {
+    res.sendFile(path.resolve('./client/dist/admin.html'));
+});
 
 import cors from 'cors';
 
