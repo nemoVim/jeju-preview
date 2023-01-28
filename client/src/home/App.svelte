@@ -1,6 +1,5 @@
 <script>
     import { getReq, postReq } from '../lib/requests';
-    import { hideElementById, showElementById } from '../lib/toggleElements';
 
     async function getPoll() {
         const poll = await getReq('/poll');
@@ -72,7 +71,7 @@
 
 <main>
     <div id="main-container">
-        <h1>메이커톤 투자 증서</h1>
+        <h1>메이커톤 투자 확인서?</h1>
 
         <p class="line" />
 
@@ -108,7 +107,7 @@
 
                 <p id="error-msg">*****</p>
             {:else}
-                <p>투표가 종료되었습니다.</p>
+                <p>투자가 종료되었습니다.</p>
             {/if}
         {/await}
         <p id="developer">ⓒ黑생회</p>
